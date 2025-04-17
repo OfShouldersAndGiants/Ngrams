@@ -7,7 +7,8 @@ fn main() {
     // Let's print the first 100 characters of the data
     println!("{}", &data[0..100]);
 
-    // Instantiate the tokenizer
+    // Instantiate the tokenizer, we use the r50k_base model because it's the default model for GPT-2
+    // and that's the one the book uses
     let bpe = r50k_base().unwrap();
 
     // Encode the tokens
