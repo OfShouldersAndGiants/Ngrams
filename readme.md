@@ -23,3 +23,8 @@ The method described in this book for training and developing your own small-but
 <br>
 &nbsp;
 
+## Chapter Progress
+
+| Chapter | Link |
+|---------|------|
+| Chapter 2: Tokenization | [Guide](/guide/chapter-02.md) |
