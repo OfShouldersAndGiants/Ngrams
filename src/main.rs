@@ -12,11 +12,10 @@ fn main() {
     // Load the data from the file
     let data = std::fs::read_to_string("src/assets/files/the-verdict.txt").unwrap();
 
-    // Initialize the tokenizer once
+    // Initialize the tokenizer
     let bpe = r50k_base().unwrap();
 
-    let sample = &data[50..data.len()];
-    let encoded_sample = encode_data(sample, &bpe);
+    let encoded_sample = encode_data(&data, &bpe);
 
     // Pre-allocate a vector for context to avoid repeated allocations
     let mut context = Vec::with_capacity(encoded_sample.len());
