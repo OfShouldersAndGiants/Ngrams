@@ -1,42 +1,41 @@
-use tiktoken_rs::{r50k_base, Rank};
+use tiktoken_rs::{r50k_base, CoreBPE};
 
-
-fn encode_data(data: &str) -> Vec<u32> {
-    // Instantiate the tokenizer, we use the r50k_base model because it's the default model for GPT-2
-    // and that's the one the book uses
-    let bpe = r50k_base().unwrap();
-
-    // Encode the tokens
-    let tokens = bpe.encode_with_special_tokens(&data);
-
-    // Return the tokens
-    tokens
+fn encode_data(data: &str, bpe: &CoreBPE) -> Vec<u32> {
+    bpe.encode_with_special_tokens(data).to_vec()
 }
 
-fn decode_data(tokens: Vec<Rank>) -> String {
-    let bpe = r50k_base().unwrap();
-
-    let data: String = bpe.decode(tokens).unwrap();
-
-    data
+fn decode_data(tokens: &[u32], bpe: &CoreBPE) -> String {
+    bpe.decode(tokens.to_vec()).unwrap()
 }
 
 fn main() {
-    // The first step is to load the data from the file
+    // Load the data from the file
     let data = std::fs::read_to_string("src/assets/files/the-verdict.txt").unwrap();
 
+    // Initialize the tokenizer once
+    let bpe = r50k_base().unwrap();
 
+    let sample = &data[50..data.len()];
+    let encoded_sample = encode_data(sample, &bpe);
 
-    let sample: &str = &data[50..data.len()];
+    // Pre-allocate a vector for context to avoid repeated allocations
+    let mut context = Vec::with_capacity(encoded_sample.len());
 
-    let encoded_sample = encode_data(sample);
+    let mut i = 0;
+    while i < encoded_sample.len() - 1 {
+        // Add the current token to the context
+        context.push(encoded_sample[i]);
 
-    for i in 1..=encoded_sample.len() {
-        let context = &encoded_sample[..i];
-        let desired = encoded_sample[i];
+        // Get the next token as the desired token
+        let desired = encoded_sample[i + 1];
+
+        // Decode context and desired token
+        let decoded_context = decode_data(&context, &bpe);
+        let decoded_desired = decode_data(&[desired], &bpe);
 
         // Print the context and desired token
-        println!("{:?} ---> {}", decode_data(context.to_vec()), decode_data([desired].to_vec()));
-    }
+        println!("{:?} ---> {}", decoded_context, decoded_desired);
 
+        i += 1;
+    }
 }
