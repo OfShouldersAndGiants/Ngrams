@@ -1,6 +1,6 @@
 mod sampling;
 
-use sampling::dataset::GPTDataset;
+use sampling::GPTDataset;
 
 fn main() {
     // Load the data from the file

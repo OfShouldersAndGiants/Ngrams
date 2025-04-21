@@ -1,1 +1,3 @@
-pub mod dataset;
+mod gptdataset;
+
+pub use gptdataset::GPTDataset;
