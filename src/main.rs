@@ -7,4 +7,6 @@ fn main() {
     let data = std::fs::read_to_string("src/assets/files/the-verdict.txt").unwrap();
 
     let dataset = GPTDataset::new(&data, 1024, 1024).unwrap();
+
+    println!("Dataset length: {}", dataset.len());
 }
