@@ -1,5 +1,5 @@
 use anyhow::Result;
-use tch::{Device, Tensor};
+use tch::Tensor;
 use tiktoken_rs::r50k_base;
 
 pub struct GPTDataset {
@@ -8,6 +8,8 @@ pub struct GPTDataset {
 }
 
 impl GPTDataset {
+    // Create a new dataset from a text file
+    // The params are the text, the max length of the input, and the stride
     pub fn new(text: &str, max_length: usize, stride: usize) -> Result<Self> {
         let bpe = r50k_base()?;
         let token_ids = bpe.encode_with_special_tokens(text);

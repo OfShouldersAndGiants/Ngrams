@@ -17,10 +17,10 @@ setup:
 		echo "LIBTORCH set to $$LIBTORCH"; \
 
 build: check-env
-	LIBTORCH=$(PWD)/libtorch cargo build
+	LIBTORCH=$(PWD)/libtorch DYLD_LIBRARY_PATH=$(PWD)/libtorch/lib cargo build
 
 run: check-env
-	LIBTORCH=$(PWD)/libtorch cargo run
+	LIBTORCH=$(PWD)/libtorch DYLD_LIBRARY_PATH=$(PWD)/libtorch/lib cargo run
 
 clean:
 	rm -rf libtorch libtorch.zip
