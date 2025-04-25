@@ -91,32 +91,59 @@ Our implementation demonstrates several key concepts:
 3. **Encoding/Decoding**: We implement both directions of the tokenization process
 4. **Practical Usage**: We demonstrate how to process a text file token by token
 
-Here's how we use it to process text:
+### Dataset Preparation with GPTDataset
+
+For training our language model, we've implemented a `GPTDataset` struct that handles the tokenization and preparation of text data:
 
 ```rust
-// Initialize the tokenizer
-let bpe = r50k_base().unwrap();
+pub struct GPTDataset {
+    input_ids: Vec<Tensor>,
+    target_ids: Vec<Tensor>,
+}
 
-// Encode the input text
-let encoded_sample = encode_data(&data, &bpe);
+impl GPTDataset {
+    pub fn new(text: &str, max_length: usize, stride: usize) -> Result<Self> {
+        let bpe = r50k_base()?;
+        let token_ids = bpe.encode_with_special_tokens(text);
 
-// Process tokens sequentially
-let mut context = Vec::with_capacity(encoded_sample.len());
-for i in 0..encoded_sample.len() - 1 {
-    context.push(encoded_sample[i]);
-    let desired = encoded_sample[i + 1];
+        let mut input_ids = Vec::new();
+        let mut target_ids = Vec::new();
 
-    // We can decode back to see the actual text
-    let decoded_context = decode_data(&context, &bpe);
-    let decoded_desired = decode_data(&[desired], &bpe);
+        for i in (0..token_ids.len() - max_length).step_by(stride) {
+            let input_chunk: Vec<i64> = token_ids[i..i + max_length]
+                .iter()
+                .map(|&x| x as i64)
+                .collect();
+            let target_chunk: Vec<i64> = token_ids[i + 1..i + max_length + 1]
+                .iter()
+                .map(|&x| x as i64)
+                .collect();
+
+            input_ids.push(Tensor::from_slice(&input_chunk));
+            target_ids.push(Tensor::from_slice(&target_chunk));
+        }
+
+        Ok(Self {
+            input_ids,
+            target_ids,
+        })
+    }
 }
 ```
+
+The `GPTDataset` implementation showcases several important aspects of working with tokenized text:
+
+1. **Sliding Window**: Uses a sliding window approach with configurable stride to create training examples
+2. **Input-Target Pairs**: Creates pairs of input and target sequences for next-token prediction
+3. **Tensor Conversion**: Converts token IDs into PyTorch tensors for model training
+4. **Memory Efficiency**: Processes text in chunks to handle large documents efficiently
 
 This implementation allows us to:
 - Process text files efficiently
 - Build context windows for language modeling
 - Understand the relationship between tokens and text
 - See how BPE works in a real-world application
+- Prepare data for training language models
 
 ## Conclusion
 
