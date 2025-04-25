@@ -27,4 +27,4 @@ The method described in this book for training and developing your own small-but
 
 | Chapter | Link |
 |---------|------|
-| Chapter 2: Tokenization | [Guide](/guide/chapter-02.md) |
+| Chapter 2: Tokenization | [Guide](./guide/chatper-02.md) |
