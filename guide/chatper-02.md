@@ -66,6 +66,58 @@ BPE is used in many state-of-the-art language models:
 3. **Memory Usage**: Large vocabularies can be memory-intensive
 4. **Training Time**: BPE training can be time-consuming for large corpora
 
+## Practical Implementation
+
+In our implementation, we use the `tiktoken-rs` library, which provides Rust bindings for OpenAI's tiktoken tokenizer. Here's how we implement BPE tokenization in practice:
+
+```rust
+use tiktoken_rs::{r50k_base, CoreBPE};
+
+// Encode text into tokens
+fn encode_data(data: &str, bpe: &CoreBPE) -> Vec<u32> {
+    bpe.encode_with_special_tokens(data).to_vec()
+}
+
+// Decode tokens back to text
+fn decode_data(tokens: &[u32], bpe: &CoreBPE) -> String {
+    bpe.decode(tokens.to_vec()).unwrap()
+}
+```
+
+Our implementation demonstrates several key concepts:
+
+1. **Token Generation**: We use the `r50k_base` tokenizer, which is the same vocabulary used by GPT-2
+2. **Context Building**: We show how tokens can be used to build context windows
+3. **Encoding/Decoding**: We implement both directions of the tokenization process
+4. **Practical Usage**: We demonstrate how to process a text file token by token
+
+Here's how we use it to process text:
+
+```rust
+// Initialize the tokenizer
+let bpe = r50k_base().unwrap();
+
+// Encode the input text
+let encoded_sample = encode_data(&data, &bpe);
+
+// Process tokens sequentially
+let mut context = Vec::with_capacity(encoded_sample.len());
+for i in 0..encoded_sample.len() - 1 {
+    context.push(encoded_sample[i]);
+    let desired = encoded_sample[i + 1];
+
+    // We can decode back to see the actual text
+    let decoded_context = decode_data(&context, &bpe);
+    let decoded_desired = decode_data(&[desired], &bpe);
+}
+```
+
+This implementation allows us to:
+- Process text files efficiently
+- Build context windows for language modeling
+- Understand the relationship between tokens and text
+- See how BPE works in a real-world application
+
 ## Conclusion
 
 BPE provides an effective way to handle the vocabulary problem in NLP by breaking words into meaningful subword units. It strikes a good balance between character-level and word-level representations, making it suitable for various NLP tasks.
