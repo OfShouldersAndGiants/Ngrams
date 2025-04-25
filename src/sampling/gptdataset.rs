@@ -36,10 +36,7 @@ impl GPTDataset {
     }
 
     pub fn get(&self, idx: usize) -> Option<(Tensor, Tensor)> {
-        if idx < self.len() {
-            Some((self.input_ids[idx].copy(), self.target_ids[idx].copy()))
-        } else {
-            None
-        }
+        if idx >= self.len() { return None; }
+        Some((self.input_ids[idx].copy(), self.target_ids[idx].copy()))
     }
 }

@@ -11,14 +11,14 @@ fn main() {
     let dataset = GPTDataset::new(&data, 4, 1).unwrap();
 
     println!("\nFirst sample:");
-    if let Some(first_sample) = dataset.get(0) {
-        println!("Input token IDs:  {:?}", first_sample.0);
-        println!("Target token IDs: {:?}", first_sample.1);
+    if let Some((input, target)) = dataset.get(0) {
+        println!("Input token IDs:  {:?}", input);
+        println!("Target token IDs: {:?}", target);
     }
 
     println!("\nSecond sample:");
-    if let Some(second_sample) = dataset.get(1) {
-        println!("Input token IDs:  {:?}", second_sample.0);
-        println!("Target token IDs: {:?}", second_sample.1);
+    if let Some((input, target)) = dataset.get(1) {
+        println!("Input token IDs:  {:?}", input);
+        println!("Target token IDs: {:?}", target);
     }
 }
