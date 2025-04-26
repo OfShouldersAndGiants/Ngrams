@@ -1,6 +1,6 @@
 mod sampling;
 
-use sampling::GPTDataset;
+use sampling::{GPTDataset, DataLoader};
 
 fn main() {
     // Load the data from the file into memory
@@ -10,14 +10,11 @@ fn main() {
     // and where we use a stride of one token
     let dataset = GPTDataset::new(&data, 4, 1).unwrap();
 
-    println!("\nFirst sample:");
-    if let Some((input, target)) = dataset.get(0) {
-        println!("Input token IDs:  {:?}", input);
-        println!("Target token IDs: {:?}", target);
-    }
+    // Create a dataloader with a batch size of 2 and drop_last set to true
+    let mut dataloader = DataLoader::new(dataset, 2, true, None);
 
-    println!("\nSecond sample:");
-    if let Some((input, target)) = dataset.get(1) {
+    // Get the first batch
+    if let Some((input, target)) = dataloader.next_batch() {
         println!("Input token IDs:  {:?}", input);
         println!("Target token IDs: {:?}", target);
     }
