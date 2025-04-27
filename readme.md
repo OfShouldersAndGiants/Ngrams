@@ -1,7 +1,7 @@
 # NLP Rust Implementations
 This repository implements various NLP algorithms in Rust using the torch crate. The goal is to explore the algorithms and their mathematical foundations, starting with fundamental techniques and progressing to more advanced models.
 
-## N-gram Language Model
+## N-gram Model
 The first step is implementing a statistical n-gram model, a foundational NLP technique for modeling sequences of words or characters. N-grams estimate the probability of a word given its preceding _n-1_ words, making them useful for tasks like text prediction and language modeling. This implementation will serve as a basis for understanding more complex models like RNNs and Transformers.
 
 ## Project Goal
