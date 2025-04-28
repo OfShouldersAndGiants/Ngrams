@@ -1,6 +1,6 @@
 use crate::llm_from_scratch::{GPTDataset, DataLoader};
 
-pub fn run_llm() {
+pub fn main() {
     // Load the data from the file into memory
     let data = std::fs::read_to_string("src/llm_from_scratch/files/the-verdict.txt").unwrap();
 

@@ -1,0 +1,48 @@
+use clap::Parser;
+use std::fs;
+use super::n_gram_model::NGramModel;
+
+#[derive(Parser)]
+struct InputArgs {
+    #[clap(short, long, default_value = "src/ngrams/files/mountaineering.txt")]
+    filename: String,
+    #[clap(short, long)]
+    input_text: String,
+    #[clap(short, long, value_parser = ["unigram", "bigram", "trigram"])]
+    mode: String
+}
+
+/// Print suggestions nicely
+fn print_suggestion(suggestion: &str, occurrences: usize) {
+    println!("{}\t{}", suggestion, occurrences);
+}
+
+// cargo run -- -i mountain -m unigram
+pub fn main(args: Vec<String>) {
+    let input_args = InputArgs::parse_from(args);
+
+    // Read file
+    let corpora: String = fs::read_to_string(input_args.filename).unwrap();
+
+
+    // This model contains unigram, bigram, and trigram counts for the corpora
+    let model: NGramModel = NGramModel::train(&corpora);
+
+    // Generate suggestions from the model
+    match input_args.mode.as_str() {
+        "unigram" => {
+            let suggestions = model.suggest_unigram(&input_args.input_text);
+            print_suggestion(&suggestions.0, suggestions.1);
+        }
+        "bigram" => {
+
+        }
+        "trigram" => {
+
+        }
+        _ => {
+            eprintln!("Unknown mode: {}", input_args.mode);
+            std::process::exit(1);
+        }
+    }
+}

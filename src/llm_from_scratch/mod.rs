@@ -1,7 +1,7 @@
 mod gptdataset;
 mod dataloader;
-mod llm;
+mod main;
 
 pub use gptdataset::GPTDataset;
 pub use dataloader::DataLoader;
-pub use llm::run_llm;
+pub use main::main;
