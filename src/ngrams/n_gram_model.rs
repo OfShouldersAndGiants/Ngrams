@@ -100,34 +100,31 @@ impl NGramModel {
         return best_candidate;
     }
 
-    /// Suggest completions using bigram counts.
+    /// Suggest next word using bigram counts.
     ///
     /// Steps:
-    /// 1. Tokenize the input text and ensure we have at least 2 tokens
-    /// 2. Extract the current (partial) word and the previous word
-    /// 3. Iterate over every ((prev_word, word), count) pair in the bigram table
-    /// 4. Keep only those pairs where prev_word matches exactly and word starts with current
-    /// 5. Map the filtered iterator to (String, usize) tuples containing just the completion and count
-    /// 6. Collect into a Vec, sort by count, and return the highest frequency completion
+    /// 1. Tokenize the input text and ensure we have at least 1 token
+    /// 2. Extract the last word to use as context for predicting the next word
+    /// 3. Iterate over every ((prev, next), count) pair in the bigram table
+    /// 4. Keep only those where the previous word matches our context word exactly
+    /// 5. Map the filtered iterator to (String, usize) tuples containing just the predicted next word and count
+    /// 6. Collect into a Vec, sort by count, and return the most likely next word based on frequency
     pub fn suggest_bigram(&self, input: &str) -> (String, usize) {
         // 1. Tokenize input and ensure we have enough tokens
         let tokenized_input = Self::tokenize(input);
 
-        if tokenized_input.len() < 2 {
+        if tokenized_input.len() < 1 {
             return (String::new(), 0);
         };
 
-        // 2. Extract current and previous words
-        let current: String = tokenized_input[tokenized_input.len() - 1].clone();
-        let previous: String = tokenized_input[tokenized_input.len() - 2].clone();
+        // 2. Extract current word to use as context
+        let current: String = tokenized_input.last().unwrap().clone();
 
-        // 3‑5. Filter on exact previous match and current prefix, map to (word, count)
+        // 3-5. Filter on exact previous match, map to (word, count)
         let mut candidates: Vec<(String, usize)> = self
             .bigram
             .iter()
-            .filter(|((previus_word, current_word), _)| {
-                previus_word == &previous && current_word.starts_with(&current)
-            })
+            .filter(|((prev_word, _), _)| prev_word == &current)
             .map(|((_, current_word), count)| (current_word.clone(), *count))
             .collect();
 
@@ -139,36 +136,34 @@ impl NGramModel {
         return best_candidate;
     }
 
-    /// Suggest completions using trigram counts.
+    /// Suggest next word using trigram counts.
     ///
     /// Steps:
-    /// 1. Tokenize the input text and ensure we have at least 3 tokens
-    /// 2. Extract the current (partial) word and the two previous words
-    /// 3. Iterate over every ((ante_prev, prev, word), count) pair in the trigram table
-    /// 4. Keep only those where both previous words match exactly and word starts with current
-    /// 5. Map the filtered iterator to (String, usize) tuples containing just the completion and count
-    /// 6. Collect into a Vec, sort by count, and return the highest frequency completion
+    /// 1. Tokenize the input text and ensure we have at least 2 tokens
+    /// 2. Extract the last two words to use as context for predicting the next word
+    /// 3. Iterate over every ((ante_prev, prev, next), count) pair in the trigram table
+    /// 4. Keep only those where both context words match exactly
+    /// 5. Map the filtered iterator to (String, usize) tuples containing just the predicted next word and count
+    /// 6. Collect into a Vec, sort by count, and return the most likely next word based on frequency
     pub fn suggest_trigram(&self, input: &str) -> (String, usize) {
         // 1. Tokenize input and ensure we have enough tokens
         let tokenized_input = Self::tokenize(input);
 
-        if tokenized_input.len() < 3 {
+        if tokenized_input.len() < 2 {
             return (String::new(), 0);
         };
 
         // 2. Extract current and two previous words
         let current: String = tokenized_input[tokenized_input.len() - 1].clone();
         let previous: String = tokenized_input[tokenized_input.len() - 2].clone();
-        let ante_previous: String = tokenized_input[tokenized_input.len() - 3].clone();
 
         // 3‑5. Filter on exact previous matches and current prefix, map to (word, count)
         let mut candidates: Vec<(String, usize)> = self
             .trigram
             .iter()
-            .filter(|((ante_prev_word, prev_word, current_word), _)| {
-                ante_prev_word == &ante_previous
-                    && prev_word == &previous
-                    && current_word.starts_with(&current)
+            .filter(|((ante_prev_word, prev_word, _), _)| {
+                ante_prev_word == &previous
+                    && prev_word == &current
             })
             .map(|((_, _, current), count)| (current.clone(), *count))
             .collect();
