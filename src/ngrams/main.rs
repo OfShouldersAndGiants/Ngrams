@@ -17,7 +17,6 @@ fn print_suggestion(suggestion: &str, occurrences: usize) {
     println!("{}\t{}", suggestion, occurrences);
 }
 
-// cargo run -- -i mountain -m unigram
 pub fn main(args: Vec<String>) {
     let input_args = InputArgs::parse_from(args);
 
