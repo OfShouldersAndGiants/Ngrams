@@ -12,18 +12,19 @@ struct InputArgs {
     mode: String
 }
 
-/// Print suggestions nicely
+/// Print suggestion nicely
 fn print_suggestion(suggestion: &str, occurrences: usize) {
     println!("{}\t{}", suggestion, occurrences);
 }
 
 pub fn main(args: Vec<String>) {
+    // Parse the arguments
     let input_args = InputArgs::parse_from(args);
 
     // Read file
     let corpora: String = fs::read_to_string(input_args.filename).unwrap();
 
-
+    // Train the model
     // This model contains unigram, bigram, and trigram counts for the corpora
     let model: NGramModel = NGramModel::train(&corpora);
 
