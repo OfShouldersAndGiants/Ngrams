@@ -35,10 +35,12 @@ pub fn main(args: Vec<String>) {
             print_suggestion(&suggestions.0, suggestions.1);
         }
         "bigram" => {
-
+            let suggestions = model.suggest_bigram(&input_args.input_text);
+            print_suggestion(&suggestions.0, suggestions.1);
         }
         "trigram" => {
-
+            let suggestions = model.suggest_trigram(&input_args.input_text);
+            print_suggestion(&suggestions.0, suggestions.1);
         }
         _ => {
             eprintln!("Unknown mode: {}", input_args.mode);

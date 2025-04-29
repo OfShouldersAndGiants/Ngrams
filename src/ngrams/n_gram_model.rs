@@ -38,9 +38,9 @@ impl NGramModel {
             // its frequency. This lets us answer questions like “after ‘rock climbing’
             // how often does ‘trip’ appear?”
             if i > 1 {
-                let prev1 = tokens[i - 2].clone();
-                let prev2 = tokens[i - 1].clone();
-                *trigram.entry((prev1, prev2, token.clone())).or_insert(0) += 1;
+                let ante_prev = tokens[i - 2].clone();
+                let prev = tokens[i - 1].clone();
+                *trigram.entry((ante_prev, prev, token.clone())).or_insert(0) += 1;
             }
         }
 
@@ -50,7 +50,6 @@ impl NGramModel {
             trigram,
         }
     }
-
 
     // ----------------------------- H E L P E R S  ---------------------------------
     /// A simple whitespace tokenizer that also strips basic punctuation and lowercases tokens.
@@ -78,13 +77,19 @@ impl NGramModel {
     /// 6.
     pub fn suggest_unigram(&self, input: &str) -> (String, usize) {
         // 1. Lower‑case the input once so we don’t repeat this inside the filter.
-        let input: String = input.to_lowercase().split_whitespace().last().unwrap_or("").to_string();
+        let input: String = input
+            .to_lowercase()
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_string();
         // 2‑4. Filter on prefix match, clone the key, copy the count; collect to Vec.
-        let mut candidates: Vec<(String, usize)> = self.unigram
-        .iter()
-        .filter(|(word, _)| word.starts_with(&input))
-        .map(|(word, count)| (word.clone(), *count))
-        .collect();
+        let mut candidates: Vec<(String, usize)> = self
+            .unigram
+            .iter()
+            .filter(|(word, _)| word.starts_with(&input))
+            .map(|(word, count)| (word.clone(), *count))
+            .collect();
 
         // 5. Sort by count descending (`b.1.cmp(&a.1)` is reverse order because `.sort_by` is ascending by default).
         candidates.sort_by(|a, b| b.1.cmp(&a.1));
@@ -92,6 +97,63 @@ impl NGramModel {
         // 6. Return
         let best_candidate = candidates.first().cloned().unwrap_or((String::new(), 0));
 
-        return best_candidate
+        return best_candidate;
+    }
+
+    pub fn suggest_bigram(&self, input: &str) -> (String, usize) {
+        let tokenized_input = Self::tokenize(input);
+
+        if tokenized_input.len() < 2 {
+            return (String::new(), 0);
+        };
+
+        let current: String = tokenized_input[tokenized_input.len() - 1].clone();
+        let previous: String = tokenized_input[tokenized_input.len() - 2].clone();
+
+        // 2‑4. Filter on prefix match, clone the key, copy the count; collect to Vec.
+        let mut candidates: Vec<(String, usize)> = self
+            .bigram
+            .iter()
+            .filter(|((previus_word, current_word), _)| {
+                previus_word == &previous && current_word.starts_with(&current)
+            })
+            .map(|((_, current_word), count)| (current_word.clone(), *count))
+            .collect();
+
+        candidates.sort_by(|a, b| b.1.cmp(&a.1));
+
+        let best_candidate = candidates.first().cloned().unwrap_or((String::new(), 0));
+
+        return best_candidate;
+    }
+
+    pub fn suggest_trigram(&self, input: &str) -> (String, usize) {
+        let tokenized_input = Self::tokenize(input);
+
+        if tokenized_input.len() < 3 {
+            return (String::new(), 0);
+        };
+
+        let current: String = tokenized_input[tokenized_input.len() - 1].clone();
+        let previous: String = tokenized_input[tokenized_input.len() - 2].clone();
+        let ante_previous: String = tokenized_input[tokenized_input.len() - 3].clone();
+
+        // 2‑4. Filter on prefix match, clone the key, copy the count; collect to Vec.
+        let mut candidates: Vec<(String, usize)> = self
+            .trigram
+            .iter()
+            .filter(|((ante_prev_word, prev_word, current_word), _)| {
+                ante_prev_word == &ante_previous
+                    && prev_word == &previous
+                    && current_word.starts_with(&current)
+            })
+            .map(|((_, _, current), count)| (current.clone(), *count))
+            .collect();
+
+        candidates.sort_by(|a, b| b.1.cmp(&a.1));
+
+        let best_candidate = candidates.first().cloned().unwrap_or((String::new(), 0));
+
+        return best_candidate;
     }
 }
