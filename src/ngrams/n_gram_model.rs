@@ -1,12 +1,16 @@
 use std::collections::HashMap;
 
 pub struct NGramModel {
-    pub unigram: HashMap<String, usize>,
-    pub bigram: HashMap<(String, String), usize>,
-    pub trigram: HashMap<(String, String, String), usize>,
+    unigram: HashMap<String, usize>,
+    bigram: HashMap<(String, String), usize>,
+    trigram: HashMap<(String, String, String), usize>,
+    vocab_count: usize,
 }
 
 impl NGramModel {
+    //──────────────────────────────────────────────────────────────────────────
+    // Training: Building raw count tables
+    //──────────────────────────────────────────────────────────────────────────
     pub fn train(text: &str) -> Self {
         // Tokenize the text, we are using a simple whitespace tokenizer for simplicity
         let tokens = Self::tokenize(text);
@@ -46,15 +50,21 @@ impl NGramModel {
             }
         }
 
+        let vocab_count = unigram.keys().len();
+
         NGramModel {
             unigram,
             bigram,
             trigram,
+            vocab_count
         }
     }
 
+    //──────────────────────────────────────────────────────────────────────────
+    // Tokeniser
+    //──────────────────────────────────────────────────────────────────────────
     /// A simple whitespace tokenizer that also strips basic punctuation and lowercases tokens.
-    pub fn tokenize(text: &str) -> Vec<String> {
+    fn tokenize(text: &str) -> Vec<String> {
         text.split_whitespace()
             .map(|t| {
                 t.trim_matches(|c: char| !c.is_alphanumeric())
@@ -63,18 +73,35 @@ impl NGramModel {
             .filter(|t| !t.is_empty())
             .collect()
     }
+
+    //──────────────────────────────────────────────────────────────────────────
+    // Laplace‑smoothed probability helpers
+    //──────────────────────────────────────────────────────────────────────────
+    /// Laplace smoothing for n-gram models
+    ///
+    fn smooth_with_laplace(&self, current: &str) -> f64 {
+        // For bigram probability P(current|previous), we use:
+        // (count(previous, current) + 1) / (count(previous) + V)
+        // where V is the vocabulary size
+        let mut total_probability = 0.0;
+
+        for (prev_word, _) in &self.unigram {
+            let bigram_count = self.bigram.get(&(prev_word.clone(), current.to_string())).unwrap_or(&0);
+            let prev_word_count = self.unigram.get(prev_word).unwrap_or(&0);
+
+            // Apply Laplace smoothing
+            let smoothed_probability = ((*bigram_count as f64) + 1.0) /
+                                    ((*prev_word_count as f64) + (self.vocab_count as f64));
+
+            total_probability += smoothed_probability;
+        }
+
+        total_probability
+    }
 }
 
 impl NGramModel {
     /// Suggest completions using unigram counts.
-    ///
-    /// Steps:
-    /// 1. Normalise the incoming prefix to lowercase so search is case-insensitive.
-    /// 2. Iterate over every (word, count) pair in the unigram table.
-    /// 3. Keep only those words whose *full* string starts with the given prefix.
-    /// 4. Map the filtered iterator to an owned `(String, usize)` tuple because
-    ///    the original keys & values are borrowed from the HashMap.
-    /// 5. Collect into a `Vec`, then sort
     pub fn suggest_unigram(&self, input: &str) -> (String, usize) {
         // 1. Lower‑case the input once so we don't repeat this inside the filter.
         let input: String = input
@@ -101,14 +128,6 @@ impl NGramModel {
     }
 
     /// Suggest next word using bigram counts.
-    ///
-    /// Steps:
-    /// 1. Tokenize the input text and ensure we have at least 1 token
-    /// 2. Extract the last word to use as context for predicting the next word
-    /// 3. Iterate over every ((prev, next), count) pair in the bigram table
-    /// 4. Keep only those where the previous word matches our context word exactly
-    /// 5. Map the filtered iterator to (String, usize) tuples containing just the predicted next word and count
-    /// 6. Collect into a Vec, sort by count, and return the most likely next word based on frequency
     pub fn suggest_bigram(&self, input: &str) -> (String, usize) {
         // 1. Tokenize input and ensure we have enough tokens
         let tokenized_input = Self::tokenize(input);
@@ -117,34 +136,29 @@ impl NGramModel {
             return (String::new(), 0);
         };
 
-        // 2. Extract current word to use as context
-        let current: String = tokenized_input.last().unwrap().clone();
+        // Extract current word to use as context
+        let current_word = tokenized_input.last().unwrap();
 
-        // 3-5. Filter on exact previous match, map to (word, count)
-        let mut candidates: Vec<(String, usize)> = self
-            .bigram
-            .iter()
-            .filter(|((prev_word, _), _)| prev_word == &current)
-            .map(|((_, current_word), count)| (current_word.clone(), *count))
-            .collect();
+        let mut candidates: Vec<(String, f64)> = Vec::new();
 
-        // 6. Sort by count descending and take the best match
-        candidates.sort_by(|a, b| b.1.cmp(&a.1));
+        // For each word in vocabulary, calculate its probability given the current word
+        for word in self.unigram.keys() {
+            let probability = self.smooth_with_laplace(word);
+            candidates.push((word.clone(), probability));
+        }
 
-        let best_candidate = candidates.first().cloned().unwrap_or((String::new(), 0));
+        // Sort by probability descending
+        candidates.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        // Convert probability back to a count-like number by scaling
+        let best_candidate = candidates.first()
+            .map(|(word, prob)| (word.clone(), (prob * 1000.0) as usize))
+            .unwrap_or((String::new(), 0));
 
         return best_candidate;
     }
 
-    /// Suggest next word using trigram counts.
-    ///
-    /// Steps:
-    /// 1. Tokenize the input text and ensure we have at least 2 tokens
-    /// 2. Extract the last two words to use as context for predicting the next word
-    /// 3. Iterate over every ((ante_prev, prev, next), count) pair in the trigram table
-    /// 4. Keep only those where both context words match exactly
-    /// 5. Map the filtered iterator to (String, usize) tuples containing just the predicted next word and count
-    /// 6. Collect into a Vec, sort by count, and return the most likely next word based on frequency
+    /// Suggest next word using trigram counts
     pub fn suggest_trigram(&self, input: &str) -> (String, usize) {
         // 1. Tokenize input and ensure we have enough tokens
         let tokenized_input = Self::tokenize(input);
@@ -162,8 +176,7 @@ impl NGramModel {
             .trigram
             .iter()
             .filter(|((ante_prev_word, prev_word, _), _)| {
-                ante_prev_word == &previous
-                    && prev_word == &current
+                ante_prev_word == &previous && prev_word == &current
             })
             .map(|((_, _, current), count)| (current.clone(), *count))
             .collect();
