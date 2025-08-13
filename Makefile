@@ -1,4 +1,11 @@
-.PHONY: setup clean
+.DEFAULT_GOAL := help
+.PHONY: help setup clean
+
+help:
+	@echo "Usage: make [target]"
+	@echo "Targets:"
+	@echo "  setup  - Download and set up libtorch (macOS arm64) and set LIBTORCH"
+	@echo "  clean  - Remove libtorch artifacts and run cargo clean"
 
 setup:
 	mkdir -p libtorch; \
