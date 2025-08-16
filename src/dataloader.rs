@@ -2,7 +2,7 @@ use tch::Tensor;
 use rand::seq::SliceRandom;
 use rand;
 
-use crate::llm_from_scratch::GPTDataset;
+use crate::gptdataset::GPTDataset;
 
 pub struct DataLoader {
     // The dataset you are reading samples from.
