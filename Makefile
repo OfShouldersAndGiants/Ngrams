@@ -1,11 +1,12 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup clean
+.PHONY: help setup clean preview
 
 help:
 	@echo "Usage: make [target]"
 	@echo "Targets:"
-	@echo "  setup  - Download and set up libtorch (macOS arm64) and set LIBTORCH"
-	@echo "  clean  - Remove libtorch artifacts and run cargo clean"
+	@echo "  setup   - Download and set up libtorch (macOS arm64) and set LIBTORCH"
+	@echo "  clean   - Remove libtorch artifacts and run cargo clean"
+	@echo "  preview - Open src/files/llm.pdf in Preview"
 
 setup:
 	mkdir -p libtorch; \
@@ -20,3 +21,5 @@ clean:
 	rm -rf libtorch libtorch.zip
 	cargo clean
 
+preview:
+	open -a Preview src/files/llm.pdf
