@@ -11,7 +11,10 @@ impl GPTDataset {
     // Create a new dataset from a text file
     // The params are the text, the max length of the input, and the stride
     pub fn new(text: &str, max_length: usize, stride: usize) -> Result<Self> {
+        // We are going to use the tiktoken library to tokenize the text. This is a byte level wich avoids wird Unicode edge cases.
+        // There are 50k tokens in the base model.
         let bpe = r50k_base()?;
+        // We are going to use the encode_with_special_tokens method to tokenize the text
         let token_ids = bpe.encode_with_special_tokens(text);
 
         let mut input_ids = Vec::new();
